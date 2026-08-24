@@ -45,6 +45,24 @@ echo "[pulsar] connecting     : pulsar://${ADVERTISE}:6650   http://${ADVERTISE}
 # -a <host> sets the advertised broker address (what 6650/9091 clients connect to).
 # bin/pulsar standalone wires the web (8080), broker (6650), ws (9091), ZK (2181) and
 # BookKeeper (3181) listeners internally — no external config file needed.
+#
+# SELF-CONNECT LOOPBACK MAP:
+#   In standalone mode the stack also starts a Functions Worker whose admin client
+#   dials the ADVERTISED web URL during boot. If that URL is the public domain, the
+#   request leaves the sandbox, crosses the Railway edge, and comes back — but the
+#   edge refuses/502s for unhealth services, so the worker's 30s admin timeout fires
+#   before the service finishes booting (observed crash: "Error Starting up in
+#   worker ... TimeoutException" -> "Failed to start pulsar service"). Mapping the
+#   advertised hostname to 127.0.0.1 in /etc/hosts keeps those INTERNAL connections
+#   on loopback (JVM reads /etc/hosts first), while real external clients still
+#   resolve the genuine domain through the edge. Skip when ADVERTISE is already
+#   loopback or when the file is not writable (harmless no-op).
+if [ -n "${ADVERTISE}" ] && [ "${ADVERTISE}" != "localhost" ] \
+   && ! printf '%s' "${ADVERTISE}" | grep -qE '^127\.' \
+   && printf '127.0.0.1 %s\n' "${ADVERTISE}" >> /etc/hosts 2>/dev/null; then
+  echo "[pulsar] /etc/hosts: ${ADVERTISE} -> 127.0.0.1 (worker self-connect via loopback)"
+fi
+
 exec bin/pulsar standalone \
   --metadata-dir     "${DATA}/metadata" \
   --bookkeeper-dir   "${DATA}/bookkeeper" \

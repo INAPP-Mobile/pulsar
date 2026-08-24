@@ -1,0 +1,7 @@
+# Keep this repo clean: no probe scratch, local data dirs, or logs.
+_probe/
+pulsar-data/
+data/
+*.log
+pulsar.log
+node_modules/

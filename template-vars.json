@@ -1,0 +1,12 @@
+{
+  "PULSAR_ADVERTISED_ADDRESS": {
+    "defaultValue": "${{RAILWAY_PUBLIC_DOMAIN}}",
+    "description": "Host the broker advertises to clients (what pulsar://:6650 and pulsar+ws://:9091 point at). Defaults to the public domain for external access; set to the private domain to keep same-project traffic off the internet. Same-project services can also use ${RAILWAY_PRIVATE_DOMAIN}.",
+    "isOptional": true
+  },
+  "PULSAR_DATA": {
+    "defaultValue": "/pulsar/data",
+    "description": "Pulsar data directory (BookKeeper ledgers + ZooKeeper/managed-metadata) on the attached persistent volume. This is the data plane that survives restarts and deploys.",
+    "isOptional": false
+  }
+}

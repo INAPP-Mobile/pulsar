@@ -1,0 +1,12 @@
+{
+  "#comment": "Single-service template (no companion DB). PULSAR_DATA is the data directory on the attached persistent volume; the volume MUST be attached at this mount point or the broker is ephemeral.",
+  "PORT": {
+    "value": "8080"
+  },
+  "PULSAR_DATA": {
+    "value": "/pulsar/data"
+  },
+  "PULSAR_ADVERTISED_ADDRESS": {
+    "value": "${{RAILWAY_PUBLIC_DOMAIN}}"
+  }
+}

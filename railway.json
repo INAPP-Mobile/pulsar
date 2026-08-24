@@ -1,0 +1,14 @@
+{
+  "$schema": "https://raw.githubusercontent.com/railwayapp/railway/main/schema/railway.schema.json",
+  "build": {
+    "builder": "RAILPACK"
+  },
+  "deploy": {
+    "healthcheckPath": "/admin/v2/clusters",
+    "healthcheckTimeout": 300,
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 5,
+    "numReplicas": 1,
+    "publicNetwork": false
+  }
+}

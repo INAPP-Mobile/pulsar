@@ -75,7 +75,18 @@ Apache Pulsar (standalone) is a single self-contained service: broker + BookKeep
    curl http://<host>:8080/admin/v2/namespaces/public/default/topics
    ```
 
-4. **Enable public TCP for data ports** (6650/9091) if you want the messaging endpoint exposed beyond the private network (the admin API on 8080 is already public).
+4. **Enable public TCP for data ports** (6650/9091) if you want the native messaging endpoint exposed beyond the private network (the admin API on 8080 is already public).
+
+   No TCP proxy needed for WebSocket clients: the embedded WebSocket service also listens
+   on 8080, so `wss://<railway-domain>/ws/v2/...` works out of the box:
+   ```bash
+   # produce (any websocket client; payload is base64 JSON)
+   wss://<domain>/ws/v2/producer/persistent/public/default/my-topic
+   # consume from earliest
+   wss://<domain>/ws/v2/reader/persistent/public/default/my-topic/messages?messageId=earliest
+   ```
+   Note: the producer endpoint may not emit its initial `connected` frame — send your first
+   message immediately after connecting and read the `send` receipt back.
 
 ## Environment
 

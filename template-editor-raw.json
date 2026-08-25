@@ -1,10 +1,18 @@
 {
-  "PULSAR_ADVERTISED_ADDRESS": {
-    "value": "${{RAILWAY_PUBLIC_DOMAIN}}",
-    "description": "Host the broker advertises to clients (what pulsar://:6650 and pulsar+ws://:9091 point at). Defaults to the public domain for external access; set to the private domain to keep same-project traffic off the internet."
+  "pulsar": {
+    "PULSAR_ADVERTISED_ADDRESS": {
+      "value": "${{RAILWAY_PUBLIC_DOMAIN}}",
+      "description": "Host the broker advertises to clients (what pulsar://:6650 and pulsar+ws://:9091 point at). Defaults to the public domain for external access; set to the private domain to keep same-project traffic off the internet."
+    },
+    "PULSAR_DATA": {
+      "value": "/pulsar/data",
+      "description": "Pulsar data directory (BookKeeper ledgers + ZooKeeper/managed-metadata) on the attached persistent volume."
+    }
   },
-  "PULSAR_DATA": {
-    "value": "/pulsar/data",
-    "description": "Pulsar data directory (BookKeeper ledgers + ZooKeeper/managed-metadata) on the attached persistent volume."
+  "pulsar-gui": {
+    "PE_CONNECTION_URL": {
+      "value": "http://${{pulsar.RAILWAY_PRIVATE_DOMAIN}}:8080",
+      "description": "Admin API URL of the pulsar broker service. Leave as the default private-network reference."
+    }
   }
 }

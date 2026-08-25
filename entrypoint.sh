@@ -42,9 +42,9 @@ echo "[pulsar] connecting     : pulsar://${ADVERTISE}:6650   http://${ADVERTISE}
 # shutdown on Railway redeploy/stop). --metadata-dir/--bookkeeper-dir keep the state on
 # the attached volume instead of the container's (ephemeral) default /pulsar/data dir.
 #
-# -a <host> sets the advertised broker address (what 6650/9091 clients connect to).
-# bin/pulsar standalone wires the web (8080), broker (6650), ws (9091), ZK (2181) and
-# BookKeeper (3181) listeners internally — no external config file needed.
+# -a <host> sets the advertised BROKER address (what 6650/9091 clients connect to).
+# The embedded BOOKIE address is governed separately by the conf pin above
+# (standalone.conf -> bookie 127.0.0.1:3181); -a does not touch it.
 #
 # SELF-CONNECT LOOPBACK MAP:
 #   In standalone mode the stack also starts a Functions Worker whose admin client
@@ -61,6 +61,61 @@ if [ -n "${ADVERTISE}" ] && [ "${ADVERTISE}" != "localhost" ] \
    && ! printf '%s' "${ADVERTISE}" | grep -qE '^127\.' \
    && printf '127.0.0.1 %s\n' "${ADVERTISE}" >> /etc/hosts 2>/dev/null; then
   echo "[pulsar] /etc/hosts: ${ADVERTISE} -> 127.0.0.1 (worker self-connect via loopback)"
+fi
+
+# ---- EMBEDDED-BOOKIE IDENTITY PIN (stable across Railway pod reassignments) ----
+# bin/pulsar standalone loads THIS conf file into BOTH the broker and the embedded
+# bookie (BKCluster.baseServerConfiguration). With upstream defaults the bookie takes
+# BKCluster.newServerConfiguration()'s EPHEMERAL branch (enableLocalTransport defaults
+# true -> PortManager.nextLockedFreePort()) and registers <pod-ip>:<random-port>.
+# The cookie written into bookkeeper/current/ pins that identity, and every later boot
+# RE-ADOPTS it (parseBookieAddressFromCookie overrides conf). On Railway the next
+# deploy gets a new pod IP -> unreachable bookie -> NotEnoughBookiesException.
+# Fix: force the FIXED-port branch (enableLocalTransport=false + allowEphemeralPorts=
+# true + bookiePort!=0 -> port=3181) and advertise 127.0.0.1 (broker and bookie share
+# this container; external clients only ever dial the broker on 6650). First boot then
+# writes a cookie of 127.0.0.1:3181, valid on every future pod. Quorum 1/1/1 = single
+# bookie ensemble.
+CONF="${PULSAR_STANDALONE_CONF:-/pulsar/conf/standalone.conf}"
+if [ -w "$CONF" ] && ! grep -q '^enableLocalTransport=' "$CONF"; then
+  # UPDATE-IN-PLACE: stock standalone.conf already carries some of these keys
+  # (e.g. an EMPTY `advertisedAddress=`). Appending a second occurrence makes
+  # commons-config see a value list ["", "127.0.0.1"], and the cookie writer then
+  # picks the first (empty) entry and falls back to the pod IP — the exact bug
+  # this pin exists to prevent. Replace in place, append only if absent.
+  pin_conf() {
+    key="$1"; val="$2"
+    if grep -q "^${key}=" "$CONF"; then
+      sed -i "s|^${key}=.*|${key}=${val}|" "$CONF"
+    else
+      printf '%s=%s\n' "$key" "$val" >> "$CONF"
+    fi
+  }
+  pin_conf enableLocalTransport false
+  pin_conf allowEphemeralPorts true
+  pin_conf bookiePort 3181
+  pin_conf allowLoopback true
+  pin_conf advertisedAddress 127.0.0.1
+  pin_conf bookkeeperEnsembleSize 1
+  pin_conf bookkeeperWriteQuorum 1
+  pin_conf bookkeeperAckQuorum 1
+  echo "[pulsar] conf pin applied: bookie pinned to 127.0.0.1:3181 ($CONF)"
+fi
+
+# ONE-TIME REPAIR for volumes poisoned by an older ephemeral-port boot: if the stored
+# cookie holds anything other than the pinned identity, reset BOTH halves of the
+# bookie state — the RocksDB metadata store (holds the cluster instanceId) AND the
+# bookie dir (holds the matching per-bookie cookie + journals/ledgers). Wiping only
+# metadata leaves the old cookie behind and the next boot dies on
+# InvalidCookieException (instanceId mismatch). Ledger data is unreadable after a
+# metadata reset regardless, so clearing both loses nothing extra; a crash-looping
+# broker is worse than a reset namespace. Fresh deploys never hit this branch.
+COOKIE="$(grep -rhoE 'bookieHost: "[^"]+"' "${DATA}"/bookkeeper/current 2>/dev/null | head -1 | tr -d '"' )"
+COOKIE_ADDR="${COOKIE#bookieHost: }"
+if [ -n "${COOKIE_ADDR}" ] && [ "${COOKIE_ADDR}" != "127.0.0.1:3181" ]; then
+  echo "[pulsar] stale bookie cookie '${COOKIE_ADDR}' detected — resetting metadata+bookie state to re-pin bookie"
+  rm -rf "${DATA:?}/metadata" "${DATA:?}/bookkeeper"
+  mkdir -p "${DATA}/metadata" "${DATA}/bookkeeper"
 fi
 
 exec bin/pulsar standalone \

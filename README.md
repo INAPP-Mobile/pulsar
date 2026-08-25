@@ -3,7 +3,7 @@
 <h1 align="center">Apache Pulsar</h1>
 <p align="center"><strong>Distributed streaming platform (Kafka/AMQP alternative) with persistent storage, on Railway</strong></p>
 <p align="center">
-    <a href="https://railway.com/deploy/qyDotn"><img src="https://railway.app/button.svg" alt="Deploy on Railway" height="40"/></a>
+    <a href="https://railway.com/deploy/pulsar"><img src="https://railway.app/button.svg" alt="Deploy on Railway" height="40"/></a>
   </p>
   <br/>
 

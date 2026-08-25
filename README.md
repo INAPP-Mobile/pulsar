@@ -3,7 +3,7 @@
 <h1 align="center">Apache Pulsar</h1>
 <p align="center"><strong>Distributed streaming platform (Kafka/AMQP alternative) with persistent storage, on Railway</strong></p>
 <p align="center">
-    <a href="https://railway.com/deploy/pulsar"><img src="https://railway.app/button.svg" alt="Deploy on Railway" height="40"/></a>
+    <a href="https://railway.com/deploy/pulsar-1"><img src="https://railway.app/button.svg" alt="Deploy on Railway" height="40"/></a>
   </p>
   <br/>
 
@@ -14,6 +14,8 @@
 ## About Hosting
 
 Apache Pulsar is a distributed pub-sub streaming platform designed to decouple messaging from compute, storage, and networking. A single standalone node bundles the broker (messaging), BookKeeper (distributed log storage), and ZooKeeper/managed metadata in one process. This template deploys one broker with its data plane on a persistent volume.
+
+**Included web dashboard:** a `pulsar-gui` service ([pulsar-express](https://github.com/bbonnin/pulsar-express)) is deployed alongside the broker and pre-wired to its admin API over the private network — open the `pulsar-gui` service's Railway domain after deploy to browse clusters, tenants, namespaces, topics, subscriptions, and message stats.
 
 ## Why Deploy
 

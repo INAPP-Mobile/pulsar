@@ -2,7 +2,7 @@
 # Single-node standalone = broker + ZooKeeper + BookKeeper in one process.
 #
 # Pinned stable release (floating tags are banned by the repo gate; dependabot-managed). v4.2.4
-FROM apachepulsar/pulsar:4.2.4
+FROM apachepulsar/pulsar:5.0.0
 
 # Apache Pulsar ships as user `pulsar` (uid 10000). A FRESH Railway volume is
 # root-owned and not world-writable, so the non-root data plane cannot create its
